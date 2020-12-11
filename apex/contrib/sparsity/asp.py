@@ -9,6 +9,13 @@ except ImportError:
     print("[ASP][Warning] torchvision cannot be imported.")
     torchvision_imported=False
 
+torchQAT_imported=True
+try:
+    from pytorch_quantization import nn as quant_nn
+except ImportError:
+    print("[ASP][Warning] pytorch quantization cannot be imported.")
+    torchQAT_imported=False
+
 def eligible_modules(model, whitelist_layer_types, allowed_layer_names, disallowed_layer_names):
     eligible_modules_list = []
     for name, mod in model.named_modules():
@@ -84,6 +91,10 @@ class ASP:
             sparse_parameter_list = {torch.nn.Linear: ['weight'], torch.nn.Conv1d: ['weight'], torch.nn.Conv2d: ['weight'], torch.nn.Conv3d: ['weight'], torchvision.ops.misc.Conv2d: ['weight']}
         else:
             sparse_parameter_list = {torch.nn.Linear: ['weight'], torch.nn.Conv1d: ['weight'], torch.nn.Conv2d: ['weight'], torch.nn.Conv3d: ['weight']}
+
+        if torchQAT_imported:
+            sparse_parameter_list.update({quant_nn.QuantConv1d: ['weight'], quant_nn.QuantConv2d: ['weight'], quant_nn.QuantConv3d: ['weight'], quant_nn.QuantConvTranspose1d: ['weight'], quant_nn.QuantConvTranspose2d: ['weight'], quant_nn.QuantConvTranspose3d: ['weight'], quant_nn.QuantLinear: ['weight']})
+            
         if custom_layer_dict: # Update default list to include user supplied custom (layer type : parameter tensor), make sure this tensor type is something ASP knows how to prune
             sparse_parameter_list.update(custom_layer_dict)
             whitelist += list(custom_layer_dict.keys())
